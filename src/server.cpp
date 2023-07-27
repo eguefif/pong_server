@@ -79,13 +79,13 @@ void Server::init_listening()
 	size_t size;
 	int i = 1;
 
-	size = 1 + clients.size();
+	size = 1 + sockets.size();
 	fds = (struct pollfd *) calloc(size, sizeof(struct pollfd));
 	fds[0].fd = listening_socket;
 	fds[0].events = POLLIN;
-	for (auto client : clients)
+	for (auto socket : sockets)
 	{
-		fds[i].fd = client.get_sock();
+		fds[i].fd = socket;
 		fds[i].events = POLLIN | POLLOUT | POLLRDHUP;
 		i++;
 	}
@@ -105,11 +105,26 @@ void Server::handle_new_client()
 			std::cout << "Error while accepting new client" << std::endl;
 		else
 		{
-			Client new_client(fd, &client);
-			clients.push_back(new_client);
-			nfds++;
+			add_new_client(fd, &client);
 		}
 	}
+}
+
+void Server::add_new_client(int fd, struct sockaddr_in *client)
+{
+	sockets.push_back(fd);
+	nfds++;
+	for (auto &game : games)
+	{
+		if (game.get_status() == WAITING_FOR_PLAYER)
+		{
+			Client new_client(fd, client);
+			game.add_player(new_client);
+			return;
+		}
+	}
+	Game game(fd, client);
+	games.push_back(game);
 }
 
 void Server::handle_connexions()
@@ -120,54 +135,33 @@ void Server::handle_connexions()
 			read_client(fds[i].fd);
 		if (fds[i].revents & POLLOUT)
 			send_client(fds[i].fd);
-		if (fds[i].revents & POLLHUP || fds[i].revents & POLLERR || fds[i].revents & POLLRDHUP)
-			remove_client(fds[i].fd);
+		//if (fds[i].revents & POLLHUP || fds[i].revents & POLLERR || fds[i].revents & POLLRDHUP)
 	}
 }
 
 void Server::read_client(int fd)
 {
-	for (auto &client : clients)
-		if (client.get_sock() == fd)
-			client.read_all();
+	for (auto &game : games)
+		game.read_message(fd);
 }
 
 void Server::send_client(int fd)
 {
-	for (auto &client : clients)
-		if (client.get_sock() == fd)
-			client.send_all();
-}
-void Server::process()
-{
-	for (auto &client : clients)
-	{
-		while (!client.inbound_messages.empty())
-		{
-			std::string temp = client.inbound_messages.front();
-			client.inbound_messages.pop();
-			std::cout << "Message: " << temp.c_str() << std::endl;
-		}
-	}
+	for (auto &game : games)
+		game.send_message(fd);
 }
 
-void Server::remove_client(int fd)
+void Server::process()
 {
-	for (auto client = clients.begin(); client != clients.end(); ++client)
-	{
-		if (client->get_sock() == fd)
-		{
-			client->cleanup();
-			clients.erase(client);
-			break;
-		}
-	}
+	for (auto &game : games)
+		game.update();
 }
 
 void Server::cleanup()
 {
 	close(listening_socket);
-	for (auto &client : clients)
-		client.cleanup();
-	clients.clear();
+	for (auto &game : games)
+		game.cleanup();
+	games.clear();
+	sockets.clear();
 }

@@ -1,6 +1,6 @@
 #include "client.hpp"
 
-Client::Client(int fd, struct sockaddr_in *info):
+Client::Client(int fd, struct sockaddr_in *info) :
 	stream(fd, info)
 {}
 
@@ -24,7 +24,9 @@ void Client::read_protoheader()
 		protoheader_read_size += stream.receive(temp, 2);
 		protoheader += temp;
 		if (protoheader_read_size == 2)
+		{
 			size = atoi(protoheader.c_str());
+		}
 	}
 	else
 	{
@@ -32,13 +34,14 @@ void Client::read_protoheader()
 		{
 			message_read_size += stream.receive(temp, size);
 			message += temp;
-			std::cout << "Size read " << message << std::endl;
 			if (message_read_size == size)
 			{
 				protoheader_read_size = 0;
 				message_read_size = 0;
-				inbound_messages.push(message);
+				Message new_message(message);
+				inbound_messages.push_back(new_message);
 				message = "";
+				protoheader = "";
 			}
 		}
 	}
@@ -46,12 +49,59 @@ void Client::read_protoheader()
 
 void Client::send_all()
 {
+	int retval;
+
+	if (outbound_messages.empty())
+		return;
+	while (!outbound_messages.empty())
+	{
+		Message message = outbound_messages.front();
+		//std::cout << "Sending " << message.get_message() << std::endl;
+		retval = stream.sendto(message.get_message_tosend(), message.get_size());
+		outbound_messages.pop();
+	}
 }
 
 void Client::cleanup()
 {
 	std::cout << "Removing client (" << stream.get_addr() << " : " << stream.get_port() << ")" << std::endl;
 	close(get_sock());
-	while (!inbound_messages.empty())
-		inbound_messages.pop();
+	inbound_messages.clear();
+}
+
+std::string Client::get_name()
+{
+	return (name);
+}
+
+bool Client::check_and_set_name()
+{
+	for (auto message = inbound_messages.begin();
+			message != inbound_messages.end();
+			++message)
+	{
+		if (message->get_command() == "name")
+		{
+			name = message->get_content();
+			inbound_messages.erase(message);
+			return (true);
+		}
+	}
+	return (false);
+}
+
+bool Client::is_ready()
+{
+	for (auto message = inbound_messages.begin();
+			message != inbound_messages.end();
+			++message)
+	{
+		if (message->get_command() == "ready")
+		{
+			std::cout << "ready " << name << std::endl;
+			inbound_messages.erase(message);
+			return (true);
+		}
+	}
+	return (false);
 }

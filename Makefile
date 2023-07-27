@@ -3,9 +3,9 @@ CC=g++
 FLAGS=-w
 INCLUDE=-I./src
 
-_SRC=main.cpp server.cpp tcpstream.cpp client.cpp utils.cpp game.cpp
+_SRC=main.cpp server.cpp tcpstream.cpp client.cpp utils.cpp game.cpp message.cpp
 _OBJ=$(_SRC:.cpp=.o)
-_INC=def.hpp server.hpp tcpstream.hpp client.hpp
+_INC=def.hpp server.hpp tcpstream.hpp client.hpp message.hpp
 SDIR=./src/
 ODIR=./obj/
 IDIR=./src/

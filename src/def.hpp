@@ -12,6 +12,7 @@
 #include <queue>
 #include <string.h>
 #include <fcntl.h>
+#include <ctime>
 
 const int MAX_CONNEXION = 100;
 const int MAX_SIZE = 50;

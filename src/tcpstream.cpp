@@ -17,7 +17,7 @@ int TCP_Stream::get_sock()
 	return (sock);
 }
 
-size_t TCP_Stream::sendto(char *buffer, size_t len)
+size_t TCP_Stream::sendto(const char *buffer, size_t len)
 {
 	size_t retval;
 	retval = send(sock, buffer, len, 0);
