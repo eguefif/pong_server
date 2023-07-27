@@ -9,6 +9,8 @@ public:
 	std::string get_message();
 	std::string get_command();
 	std::string get_content();
+	void set_command(std::string acommand);
+	void set_content(std::string acontent);
 	size_t get_size();
 	void update_sent(size_t size);
 	const char *get_message_tosend();

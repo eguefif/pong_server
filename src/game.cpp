@@ -12,9 +12,11 @@ Game::Game(int fd, struct sockaddr_in *info) :
 
 void Game::add_player(Client aplayer)
 {
-	Message message("full", "");
+	Message message("join", "");
 	player2 = aplayer;
+	player2.outbound_messages.push(message);
 	status = INIT;
+	message.set_command("full");
 	player2.outbound_messages.push(message);
 	player1.outbound_messages.push(message);
 	std::cout << "Game with " << player1.get_name() << " is full with " << player2.get_name() << std::endl;
@@ -74,6 +76,7 @@ void Game::init()
 	{
 		if (player1.check_and_set_name())
 		{
+			std::cout << "Name: " << player1.get_name() << std::endl;
 			Message message("name", player1.get_name());
 			player2.outbound_messages.push(message);
 			init_flag |= NAME1;
@@ -83,6 +86,7 @@ void Game::init()
 	{
 		if (player2.check_and_set_name())
 		{
+			std::cout << "Name: " << player2.get_name() << std::endl;
 			Message message("name", player2.get_name());
 			player1.outbound_messages.push(message);
 			init_flag |= NAME2;

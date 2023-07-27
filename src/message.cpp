@@ -68,3 +68,13 @@ std::string Message::trim(std::string str)
 	end = str.find_last_not_of("\n\t\r ");
 	return str.substr(0, end);
 }
+
+void Message::set_command(std::string acommand)
+{
+	command = acommand;
+}
+
+void Message::set_content(std::string acontent)
+{
+	content = acontent;
+}

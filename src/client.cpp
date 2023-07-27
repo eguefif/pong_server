@@ -55,9 +55,12 @@ void Client::send_all()
 		return;
 	while (!outbound_messages.empty())
 	{
+		char temp[MAX_SIZE];
+
+		memset(temp, 0, sizeof(temp));
 		Message message = outbound_messages.front();
-		//std::cout << "Sending " << message.get_message() << std::endl;
-		retval = stream.sendto(message.get_message_tosend(), message.get_size());
+		sprintf(temp, "%02d%s", (int) message.get_size(), message.get_message_tosend());
+		retval = stream.sendto(temp, message.get_size());
 		outbound_messages.pop();
 	}
 }
