@@ -60,7 +60,7 @@ void Client::send_all()
 		memset(temp, 0, sizeof(temp));
 		Message message = outbound_messages.front();
 		sprintf(temp, "%02d%s", (int) message.get_size(), message.get_message_tosend());
-		retval = stream.sendto(temp, message.get_size());
+		retval = stream.sendto(temp, strlen(temp));
 		outbound_messages.pop();
 	}
 }
