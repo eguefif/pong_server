@@ -28,6 +28,7 @@ public:
 	void cleanup();
 	void read_message(int fd);
 	void send_message(int fd);
+	void send_end_of_service();
 	bool is_player_socket(int fd);
 
 private:

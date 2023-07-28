@@ -3,6 +3,7 @@
 #include "client.hpp"
 #include "game.hpp"
 
+
 class Server
 {
 public:
@@ -21,7 +22,6 @@ private:
 	std::vector<int> sockets;
 	std::vector<Game> games;
 	int timeout = 500;
-	bool running = true;
 
 	int init();
 	void onlisten();

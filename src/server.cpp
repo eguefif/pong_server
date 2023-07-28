@@ -1,5 +1,7 @@
 #include "server.hpp"
 
+bool running = true;
+
 Server::Server(std::string add, int aport) :
 	address(add), port(aport)
 {}
@@ -19,6 +21,8 @@ int Server::init()
 	struct sockaddr_in s_address;
 	int opt = 1;
 
+	signal(SIGINT, signal_handler);
+	signal(SIGTERM, signal_handler);
 	memset(&s_address, '\0', sizeof(s_address));
 	listening_socket = socket(AF_INET, SOCK_STREAM, 0);
 	if (listening_socket < 0)
@@ -168,6 +172,7 @@ void Server::garbage_games()
 			game_to_delete.push_back(game);
 	for (auto game : game_to_delete)
 	{
+		game->cleanup();
 		games.erase(game);
 		std::cout << "Erasing game" << std::endl;
 	}
@@ -178,7 +183,10 @@ void Server::cleanup()
 {
 	close(listening_socket);
 	for (auto &game : games)
+	{
+		game.send_end_of_service();
 		game.cleanup();
+	}
 	games.clear();
 	sockets.clear();
 }

@@ -234,3 +234,12 @@ bool Game::is_player_socket(int fd)
 		return true;
 	return false;
 }
+
+void Game::send_end_of_service()
+{
+	Message end("EOG", "server");
+	player1.outbound_messages.push(end);
+	player2.outbound_messages.push(end);
+	player1.send_all();
+	player2.send_all();
+}
