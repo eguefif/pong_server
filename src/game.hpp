@@ -11,7 +11,8 @@ public:
 		READY = 2,
 		PLAYING = 3,
 		PAUSE = 4,
-		FINISHED = 5
+		FINISHED = 5,
+		DISCONNECTION = 6
 	};
 	enum e_init_flag {
 		BALL = 1 << 0,
@@ -22,10 +23,12 @@ public:
 	};
 	void add_player(Client aplayer);
 	int get_status();
+	void set_to_disconnect();
 	void update();
 	void cleanup();
 	void read_message(int fd);
 	void send_message(int fd);
+	bool is_player_socket(int fd);
 
 private:
 	Client	player1;

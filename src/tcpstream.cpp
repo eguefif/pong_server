@@ -8,8 +8,6 @@ TCP_Stream::TCP_Stream(int asock, struct sockaddr_in *info) :
 	inet_ntop(AF_INET, (struct sockaddr *) info, temp_address, INET_ADDRSTRLEN);
 	peer_port = ntohs(info->sin_port);
 	peer_add = temp_address;
-	std::cout << "New client sock " << sock << " (" \
-		<< peer_add << ":" << peer_port << ")" << std::endl;
 }
 
 int TCP_Stream::get_sock()

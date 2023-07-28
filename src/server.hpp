@@ -34,4 +34,6 @@ private:
 	void add_new_client(int fd, struct sockaddr_in *client);
 	void remove_client(int fd);
 	void process();
+	void garbage_games();
+	void set_game_to_disconnect(int fd);
 };

@@ -67,7 +67,6 @@ void Client::send_all()
 
 void Client::cleanup()
 {
-	std::cout << "Removing client (" << stream.get_addr() << " : " << stream.get_port() << ")" << std::endl;
 	close(get_sock());
 	inbound_messages.clear();
 }
@@ -101,7 +100,6 @@ bool Client::is_ready()
 	{
 		if (message->get_command() == "ready")
 		{
-			std::cout << "ready " << name << std::endl;
 			inbound_messages.erase(message);
 			return (true);
 		}

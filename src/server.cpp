@@ -102,7 +102,7 @@ void Server::handle_new_client()
 		memset(&client, '\0', sizeof(client));
 		fd = accept(listening_socket,(struct sockaddr*) &client, &client_len);
 		if (fd < -1)
-			std::cout << "Error while accepting new client" << std::endl;
+			std::cerr << "Error while accepting new client" << std::endl;
 		else
 		{
 			add_new_client(fd, &client);
@@ -135,7 +135,8 @@ void Server::handle_connexions()
 			read_client(fds[i].fd);
 		if (fds[i].revents & POLLOUT)
 			send_client(fds[i].fd);
-		//if (fds[i].revents & POLLHUP || fds[i].revents & POLLERR || fds[i].revents & POLLRDHUP)
+		if (fds[i].revents & POLLHUP || fds[i].revents & POLLERR || fds[i].revents & POLLRDHUP)
+			set_game_to_disconnect(fds[i].fd);
 	}
 }
 
@@ -153,8 +154,24 @@ void Server::send_client(int fd)
 
 void Server::process()
 {
+	garbage_games();
 	for (auto &game : games)
 		game.update();
+}
+
+void Server::garbage_games()
+{
+	std::vector<std::vector<Game>::iterator> game_to_delete;
+
+	for (auto game = games.begin(); game != games.end(); ++game)
+		if (game->get_status() == 5)
+			game_to_delete.push_back(game);
+	for (auto game : game_to_delete)
+	{
+		games.erase(game);
+		std::cout << "Erasing game" << std::endl;
+	}
+	game_to_delete.clear();
 }
 
 void Server::cleanup()
@@ -164,4 +181,13 @@ void Server::cleanup()
 		game.cleanup();
 	games.clear();
 	sockets.clear();
+}
+
+void Server::set_game_to_disconnect(int fd)
+{
+	for (auto &game : games)
+	{
+		if (game.is_player_socket(fd))
+			game.set_to_disconnect();
+	}
 }

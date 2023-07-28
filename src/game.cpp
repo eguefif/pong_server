@@ -5,21 +5,18 @@ Game::Game(int fd, struct sockaddr_in *info) :
 {
 	Message message("waiting", "");
 	player1.outbound_messages.push(message);
-	std::cout << "Creating a new game. Player 1: " << player1.get_name() << std::endl;
 	srand(time(NULL));
 	ball_direction = rand() % 4;
 }
 
 void Game::add_player(Client aplayer)
 {
-	Message message("join", "");
+	Message join("join", "");
 	player2 = aplayer;
-	player2.outbound_messages.push(message);
+	player2.outbound_messages.push(join);
 	status = INIT;
-	message.set_command("full");
-	player2.outbound_messages.push(message);
-	player1.outbound_messages.push(message);
-	std::cout << "Game with " << player1.get_name() << " is full with " << player2.get_name() << std::endl;
+	Message full("full", "");
+	broadcast(full);
 }
 
 int Game::get_status()
@@ -62,6 +59,8 @@ void Game::update()
 		pause();
 	else if (status == FINISHED)
 		finished();
+	else if (status == DISCONNECTION)
+		finished();
 }
 
 void Game::init()
@@ -76,7 +75,6 @@ void Game::init()
 	{
 		if (player1.check_and_set_name())
 		{
-			std::cout << "Name: " << player1.get_name() << std::endl;
 			Message message("name", player1.get_name());
 			player2.outbound_messages.push(message);
 			init_flag |= NAME1;
@@ -86,7 +84,6 @@ void Game::init()
 	{
 		if (player2.check_and_set_name())
 		{
-			std::cout << "Name: " << player2.get_name() << std::endl;
 			Message message("name", player2.get_name());
 			player1.outbound_messages.push(message);
 			init_flag |= NAME2;
@@ -96,7 +93,6 @@ void Game::init()
 	{
 		if (player1.is_ready())
 		{
-			std::cout << "Ready1"<< std::endl;
 			init_flag |= READY1;
 		}
 	}
@@ -104,13 +100,11 @@ void Game::init()
 	{
 		if (player2.is_ready())
 		{
-			std::cout << "Ready2"<< std::endl;
 			init_flag |= READY2;
 		}
 	}
 	if (is_init_done())
 	{
-		std::cout << "Game starting" << std::endl;
 		status = PLAYING;
 		send_start_game();
 	}
@@ -134,17 +128,109 @@ void Game::send_start_game()
 
 void Game::playing()
 {
+	for (auto message = player1.inbound_messages.begin();
+			message != player1.inbound_messages.end();
+			++message)
+	{
+		if (message->get_command() == "EOG")
+		{
+			status = FINISHED;
+			player2.outbound_messages.push(*message);
+			return;
+		}
+		if (message->get_command() == "pause")
+		{
+			status = PAUSE;
+			player2.outbound_messages.push(*message);
+			return;
+		}
+		player2.outbound_messages.push(*message);
+	}
+	for (auto message = player2.inbound_messages.begin();
+			message != player2.inbound_messages.end();
+			++message)
+	{
+		if (message->get_command() == "EOG")
+		{
+			status = FINISHED;
+			player1.outbound_messages.push(*message);
+			return;
+		}
+		if (message->get_command() == "pause")
+		{
+			status = PAUSE;
+			player1.outbound_messages.push(*message);
+			return;
+		}
+		player1.outbound_messages.push(*message);
+	}
 
+	player1.inbound_messages.clear();
+	player2.inbound_messages.clear();
 }
 
 void Game::pause()
-{}
+{
+	for (auto message = player1.inbound_messages.begin();
+			message != player1.inbound_messages.end();
+			++message)
+	{
+		if (message->get_command() == "EOG")
+		{
+			status = FINISHED;
+			player2.outbound_messages.push(*message);
+			return;
+		}
+		if (message->get_command() == "unpause")
+		{
+			status = PLAYING;
+			player2.outbound_messages.push(*message);
+			return;
+		}
+	}
+	for (auto message = player2.inbound_messages.begin();
+			message != player2.inbound_messages.end();
+			++message)
+	{
+		if (message->get_command() == "EOG")
+		{
+			status = FINISHED;
+			player1.outbound_messages.push(*message);
+			return;
+		}
+		if (message->get_command() == "unpause")
+		{
+			status = PLAYING;
+			player1.outbound_messages.push(*message);
+			return;
+		}
+	}
+
+	player1.inbound_messages.clear();
+	player2.inbound_messages.clear();
+
+}
 
 void Game::finished()
-{}
+{
+}
 
 void Game::broadcast(Message message)
 {
 	player1.outbound_messages.push(message);
 	player2.outbound_messages.push(message);
+}
+
+void Game::set_to_disconnect()
+{
+	status = DISCONNECTION;
+}
+
+bool Game::is_player_socket(int fd)
+{
+	if (player1.get_sock() == fd)
+		return true;
+	else if (player2.get_sock() == fd)
+		return true;
+	return false;
 }
